@@ -1,0 +1,630 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Mombasa Revenue Collection System</title>
+  
+  <!-- CSS -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
+  <style>
+    :root {
+      --primary-color: #2c3e50;
+      --secondary-color: #3498db;
+      --accent-color: #e74c3c;
+      --light-color: #ecf0f1;
+      --dark-color: #2c3e50;
+    }
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background-color: #f8f9fa;
+      color: var(--dark-color);
+    }
+    .navbar-brand {
+      font-weight: 700;
+      color: var(--secondary-color);
+    }
+    .card {
+      border-radius: 10px;
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+      transition: transform 0.3s ease;
+      margin-bottom: 20px;
+    }
+    .card:hover { transform: translateY(-5px); }
+    .btn-primary {
+      background-color: var(--secondary-color);
+      border-color: var(--secondary-color);
+    }
+    .btn-danger {
+      background-color: var(--accent-color);
+      border-color: var(--accent-color);
+    }
+    .auth-section {
+      max-width: 500px;
+      margin: 0 auto;
+    }
+    .transaction-item {
+      border-left: 4px solid var(--secondary-color);
+    }
+    .transaction-item.failed { border-left-color: var(--accent-color); }
+    .transaction-item.pending { border-left-color: #f39c12; }
+    .service-card {
+      cursor: pointer;
+    }
+    .service-card.selected {
+      border: 2px solid var(--secondary-color);
+    }
+    #loadingSpinner {
+      display: none;
+    }
+    .toast-container {
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      z-index: 1100;
+    }
+  </style>
+</head>
+<body>
+  <!-- Navigation -->
+  <nav class="navbar navbar-expand-lg navbar-dark bg-dark mb-4">
+    <div class="container">
+      <a class="navbar-brand" href="#"><i class="bi bi-cash-coin"></i> Mombasa Revenue</a>
+      <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+        <span class="navbar-toggler-icon"></span>
+      </button>
+      <div class="collapse navbar-collapse" id="navbarNav">
+        <ul class="navbar-nav ms-auto">
+          <li class="nav-item"><a class="nav-link" href="#" id="homeLink"><i class="bi bi-house"></i> Home</a></li>
+          <li class="nav-item"><a class="nav-link" href="#" id="servicesLink"><i class="bi bi-list-check"></i> Services</a></li>
+          <li class="nav-item"><a class="nav-link" href="#" id="paymentsLink"><i class="bi bi-credit-card"></i> Payments</a></li>
+          <li class="nav-item"><a class="nav-link" href="#" id="historyLink"><i class="bi bi-clock-history"></i> History</a></li>
+          <li class="nav-item"><a class="nav-link" href="#" id="logoutLink" style="display: none;"><i class="bi bi-box-arrow-right"></i> Logout</a></li>
+        </ul>
+      </div>
+    </div>
+  </nav>
+
+  <!-- Toast Container -->
+  <div class="toast-container"></div>
+
+  <!-- Loading Spinner -->
+  <div class="text-center mb-4" id="loadingSpinner">
+    <div class="spinner-border text-primary" role="status">
+      <span class="visually-hidden">Loading...</span>
+    </div>
+  </div>
+
+  <!-- Auth Section -->
+  <div class="container" id="authSection">
+    <div class="row justify-content-center">
+      <div class="col-md-6">
+        <ul class="nav nav-tabs" id="authTabs">
+          <li class="nav-item"><a class="nav-link active" data-bs-toggle="tab" href="#login">Login</a></li>
+          <li class="nav-item"><a class="nav-link" data-bs-toggle="tab" href="#signup">Sign Up</a></li>
+        </ul>
+        <div class="tab-content p-4 border border-top-0 rounded-bottom">
+          <!-- Login Tab -->
+          <div class="tab-pane fade show active" id="login">
+            <form id="loginForm">
+              <div class="mb-3">
+                <label for="loginEmail" class="form-label">Email</label>
+                <input type="email" class="form-control" id="loginEmail" required>
+              </div>
+              <div class="mb-3">
+                <label for="loginPassword" class="form-label">Password</label>
+                <input type="password" class="form-control" id="loginPassword" required>
+              </div>
+              <button type="submit" class="btn btn-primary w-100">Login</button>
+            </form>
+          </div>
+          
+          <!-- Signup Tab -->
+          <div class="tab-pane fade" id="signup">
+            <form id="signupForm">
+              <div class="mb-3">
+                <label for="signupEmail" class="form-label">Email</label>
+                <input type="email" class="form-control" id="signupEmail" required>
+              </div>
+              <div class="mb-3">
+                <label for="signupPassword" class="form-label">Password</label>
+                <input type="password" class="form-control" id="signupPassword" required>
+                <small class="text-muted">Minimum 8 characters with uppercase, lowercase, number and special character</small>
+              </div>
+              <div class="mb-3">
+                <label for="signupRole" class="form-label">Role</label>
+                <select class="form-select" id="signupRole" required>
+                  <option value="">Select role</option>
+                  <option value="citizen">Citizen</option>
+                  <option value="business">Business</option>
+                </select>
+              </div>
+              <div class="mb-3" id="idFieldContainer">
+                <!-- Dynamic field for national ID or business registration -->
+              </div>
+              <button type="submit" class="btn btn-primary w-100">Sign Up</button>
+            </form>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Main Content -->
+  <div id="mainContent" style="display: none;">
+    <!-- Dashboard -->
+    <div id="dashboardSection">
+      <div class="row">
+        <div class="col-md-4">
+          <div class="card text-white bg-primary mb-3">
+            <div class="card-body">
+              <h5 class="card-title">Total Payments</h5>
+              <h2 class="card-text" id="totalPayments">KES 0</h2>
+            </div>
+          </div>
+        </div>
+        <div class="col-md-4">
+          <div class="card text-white bg-success mb-3">
+            <div class="card-body">
+              <h5 class="card-title">Completed</h5>
+              <h2 class="card-text" id="completedPayments">0</h2>
+            </div>
+          </div>
+        </div>
+        <div class="col-md-4">
+          <div class="card text-white bg-warning mb-3">
+            <div class="card-body">
+              <h5 class="card-title">Pending</h5>
+              <h2 class="card-text" id="pendingPayments">0</h2>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Services Section -->
+    <div id="servicesSection" style="display: none;">
+      <h3 class="mb-4"><i class="bi bi-list-check"></i> Available Services</h3>
+      <div class="row" id="servicesContainer"></div>
+    </div>
+
+    <!-- Payment Section -->
+    <div id="paymentSection" style="display: none;">
+      <div class="row">
+        <div class="col-md-8">
+          <div class="card mb-4">
+            <div class="card-header bg-primary text-white">
+              <h4><i class="bi bi-credit-card"></i> Make Payment</h4>
+            </div>
+            <div class="card-body">
+              <form id="paymentForm">
+                <div class="mb-3">
+                  <label class="form-label">Selected Service</label>
+                  <div class="card service-card p-3 mb-3" id="selectedServiceCard" style="display: none;">
+                    <h5 id="selectedServiceName"></h5>
+                    <p class="mb-1" id="selectedServiceDescription"></p>
+                    <h6 class="mt-2" id="selectedServiceAmount"></h6>
+                  </div>
+                  <button type="button" class="btn btn-outline-primary" id="selectServiceBtn">
+                    <i class="bi bi-plus-circle"></i> Select Service
+                  </button>
+                </div>
+                <div class="mb-3">
+                  <label for="paymentAmount" class="form-label">Amount (KES)</label>
+                  <input type="number" class="form-control" id="paymentAmount" required readonly>
+                </div>
+                <div class="mb-3">
+                  <label for="paymentMethod" class="form-label">Payment Method</label>
+                  <select class="form-select" id="paymentMethod" required>
+                    <option value="">Select method</option>
+                    <option value="mobile_money">Mobile Money</option>
+                    <option value="card">Credit/Debit Card</option>
+                    <option value="bank_transfer">Bank Transfer</option>
+                  </select>
+                </div>
+                <div class="mb-3" id="mobileMoneyFields" style="display: none;">
+                  <label for="phoneNumber" class="form-label">Phone Number</label>
+                  <input type="tel" class="form-control" id="phoneNumber" placeholder="e.g. 254712345678">
+                </div>
+                <button type="submit" class="btn btn-primary w-100">
+                  <i class="bi bi-credit-card"></i> Process Payment
+                </button>
+              </form>
+            </div>
+          </div>
+        </div>
+        <div class="col-md-4">
+          <div class="card">
+            <div class="card-header bg-info text-white">
+              <h4><i class="bi bi-info-circle"></i> Payment Instructions</h4>
+            </div>
+            <div class="card-body">
+              <div id="mobileMoneyInstructions" style="display: none;">
+                <h5>Mobile Money</h5>
+                <ol>
+                  <li>Enter your phone number</li>
+                  <li>Confirm payment</li>
+                  <li>Enter your M-Pesa PIN when prompted</li>
+                </ol>
+              </div>
+              <div id="cardInstructions" style="display: none;">
+                <h5>Card Payment</h5>
+                <ol>
+                  <li>You'll be redirected to secure payment page</li>
+                  <li>Enter your card details</li>
+                  <li>Complete 3D Secure authentication if required</li>
+                </ol>
+              </div>
+              <div id="bankInstructions" style="display: none;">
+                <h5>Bank Transfer</h5>
+                <ol>
+                  <li>Use the following account details:</li>
+                  <li>Bank: Mombasa County Bank</li>
+                  <li>Account: 1234567890</li>
+                  <li>Reference: Your ID Number</li>
+                </ol>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- History Section -->
+    <div id="historySection" style="display: none;">
+      <h3 class="mb-4"><i class="bi bi-clock-history"></i> Transaction History</h3>
+      <div class="input-group mb-3">
+        <input type="text" class="form-control" placeholder="Search transactions..." id="searchTransactions">
+        <button class="btn btn-outline-secondary" type="button" id="searchBtn">
+          <i class="bi bi-search"></i>
+        </button>
+      </div>
+      <div class="table-responsive">
+        <table class="table table-hover">
+          <thead class="table-light">
+            <tr>
+              <th>Date</th>
+              <th>Service</th>
+              <th>Amount</th>
+              <th>Method</th>
+              <th>Status</th>
+              <th>Receipt</th>
+            </tr>
+          </thead>
+          <tbody id="transactionsTable"></tbody>
+        </table>
+      </div>
+      <nav aria-label="Transaction pagination">
+        <ul class="pagination justify-content-center" id="pagination"></ul>
+      </nav>
+    </div>
+  </div>
+
+  <!-- Service Selection Modal -->
+  <div class="modal fade" id="serviceModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title">Select Service</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+          <div class="row" id="modalServicesContainer"></div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Receipt Modal -->
+  <div class="modal fade" id="receiptModal" tabindex="-1">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title">Payment Receipt</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body" id="receiptContent"></div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+          <button type="button" class="btn btn-primary" id="printReceiptBtn">
+            <i class="bi bi-printer"></i> Print
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Scripts -->
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+  <script src="https://cdn.jsdelivr.net/npm/bs5-toast@1.0.0/dist/bs5-toast.min.js" defer></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', function () {
+      // DOM Elements
+      const authSection = document.getElementById('authSection');
+      const mainContent = document.getElementById('mainContent');
+      const loadingSpinner = document.getElementById('loadingSpinner');
+      const toastContainer = document.querySelector('.toast-container');
+      const sections = ['dashboardSection', 'servicesSection', 'paymentSection', 'historySection'];
+
+      // Utility Functions
+      function showToast(message, type = 'danger') {
+        const toast = document.createElement('div');
+        toast.className = `toast align-items-center text-bg-${type} border-0`;
+        toast.innerHTML = `
+          <div class="d-flex">
+            <div class="toast-body">${message}</div>
+            <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+          </div>
+        `;
+        toastContainer.appendChild(toast);
+        const bsToast = new bootstrap.Toast(toast);
+        bsToast.show();
+      }
+
+      function showLoading() { loadingSpinner.style.display = 'block'; }
+      function hideLoading() { loadingSpinner.style.display = 'none'; }
+      function showSection(sectionId) {
+        sections.forEach(id => {
+          const el = document.getElementById(id);
+          el.style.display = el.id === sectionId ? 'block' : 'none';
+        });
+      }
+
+      // Navigation
+      document.getElementById('homeLink').addEventListener('click', () => {
+        authSection.style.display = 'none';
+        mainContent.style.display = 'block';
+        showSection('dashboardSection');
+        loadDashboard();
+      });
+
+      document.getElementById('servicesLink').addEventListener('click', () => {
+        authSection.style.display = 'none';
+        mainContent.style.display = 'block';
+        showSection('servicesSection');
+        loadServices();
+      });
+
+      document.getElementById('paymentsLink').addEventListener('click', () => {
+        authSection.style.display = 'none';
+        mainContent.style.display = 'block';
+        showSection('paymentSection');
+        loadServices();
+      });
+
+      document.getElementById('historyLink').addEventListener('click', () => {
+        authSection.style.display = 'none';
+        mainContent.style.display = 'block';
+        showSection('historySection');
+        loadTransactions();
+      });
+
+      // Auth
+      document.getElementById('loginForm').addEventListener('submit', handleLogin);
+      document.getElementById('signupForm').addEventListener('submit', handleSignup);
+
+      function handleLogin(e) {
+        e.preventDefault();
+        showLoading();
+        // Simulate login success
+        setTimeout(() => {
+          hideLoading();
+          authSection.style.display = 'none';
+          mainContent.style.display = 'block';
+          document.getElementById('logoutLink').style.display = 'block';
+          loadDashboard();
+        }, 1000);
+      }
+
+      function handleSignup(e) {
+        e.preventDefault();
+        const role = document.getElementById('signupRole').value;
+        const idField = role === 'citizen' 
+          ? document.getElementById('nationalId').value 
+          : document.getElementById('businessReg').value;
+        
+        if (!idField) {
+          showToast('Please fill in your ID', 'warning');
+          return;
+        }
+        
+        showToast('Signup successful! Please login.', 'success');
+        document.getElementById('login-tab').click();
+      }
+
+      // Service Selection
+      document.getElementById('selectServiceBtn').addEventListener('click', () => {
+        const modal = new bootstrap.Modal(document.getElementById('serviceModal'));
+        modal.show();
+      });
+
+      // Initialize
+      authSection.style.display = 'block';
+      mainContent.style.display = 'none';
+      document.getElementById('logoutLink').style.display = 'none';
+      sections.forEach(id => document.getElementById(id).style.display = 'none');
+      
+      // Role-based ID Field
+      document.getElementById('signupRole').addEventListener('change', function () {
+        const role = this.value;
+        const container = document.getElementById('idFieldContainer');
+        container.innerHTML = role === 'citizen' 
+          ? `<label for="nationalId" class="form-label">National ID</label>
+             <input type="text" class="form-control" id="nationalId" placeholder="e.g. 12345678">`
+          : `<label for="businessReg" class="form-label">Business Registration Number</label>
+             <input type="text" class="form-control" id="businessReg" placeholder="e.g. BN123456">`;
+      });
+
+      // Mock Data & Functions
+      const mockServices = [
+        { id: 1, name: 'Water Bill', description: 'Monthly water consumption charges', amount: 500 },
+        { id: 2, name: 'Property Tax', description: 'Annual property ownership tax', amount: 2000 },
+        { id: 3, name: 'Garbage Fee', description: 'Monthly waste collection fee', amount: 150 }
+      ];
+
+      function loadServices() {
+        const container = document.getElementById('servicesContainer');
+        const modalContainer = document.getElementById('modalServicesContainer');
+        [container, modalContainer].forEach(cont => {
+          cont.innerHTML = '';
+          mockServices.forEach(service => {
+            const col = document.createElement('div');
+            col.className = 'col-md-4 mb-3';
+            col.innerHTML = `
+              <div class="card service-card" data-id="${service.id}">
+                <div class="card-body">
+                  <h5 class="card-title">${service.name}</h5>
+                  <p class="card-text">${service.description}</p>
+                  <h6 class="card-subtitle mb-2 text-muted">KES ${service.amount}</h6>
+                  <button class="btn btn-primary selectServiceBtn" data-id="${service.id}">Select</button>
+                </div>
+              </div>
+            `;
+            cont.appendChild(col);
+          });
+        });
+
+        document.querySelectorAll('.selectServiceBtn').forEach(btn => {
+          btn.addEventListener('click', function () {
+            const serviceId = parseInt(this.getAttribute('data-id'));
+            const selected = mockServices.find(s => s.id === serviceId);
+            
+            // Clear previous selections
+            document.querySelectorAll('.service-card').forEach(card => card.classList.remove('selected'));
+            
+            // Highlight selected service
+            const card = this.closest('.service-card');
+            card.classList.add('selected');
+            
+            // Update payment form
+            document.getElementById('selectedServiceName').innerText = selected.name;
+            document.getElementById('selectedServiceDescription').innerText = selected.description;
+            document.getElementById('selectedServiceAmount').innerText = `KES ${selected.amount}`;
+            document.getElementById('paymentAmount').value = selected.amount;
+            document.getElementById('selectedServiceCard').style.display = 'block';
+            
+            // Hide modal if open
+            const modalEl = document.getElementById('serviceModal');
+            if (bootstrap.Modal.getInstance(modalEl)) {
+              bootstrap.Modal.getInstance(modalEl).hide();
+            }
+          });
+        });
+      }
+
+      function loadDashboard() {
+        document.getElementById('totalPayments').innerText = 'KES 500,000';
+        document.getElementById('completedPayments').innerText = '1,234';
+        document.getElementById('pendingPayments').innerText = '45';
+      }
+
+      function loadTransactions(page = 1, searchQuery = '') {
+        // Mock transaction data
+        const transactions = Array(10).fill(null).map((_, i) => ({
+          id: i + 1,
+          date: new Date(Date.now() - i * 86400000),
+          service_name: ['Water Bill', 'Property Tax', 'Garbage Fee'][i % 3],
+          amount: [500, 2000, 150][i % 3],
+          method: ['mobile_money', 'card', 'bank_transfer'][i % 3],
+          status: ['completed', 'pending', 'failed'][Math.floor(Math.random() * 3)]
+        }));
+
+        const table = document.getElementById('transactionsTable');
+        table.innerHTML = transactions.map(t => `
+          <tr>
+            <td>${t.date.toLocaleDateString()}</td>
+            <td>${t.service_name}</td>
+            <td>KES ${t.amount}</td>
+            <td>${t.method}</td>
+            <td>${t.status}</td>
+            <td><button class="btn btn-link viewReceiptBtn" data-id="${t.id}">View</button></td>
+          </tr>
+        `).join('');
+        
+        // Pagination
+        const pagination = document.getElementById('pagination');
+        pagination.innerHTML = Array(5).fill(null).map((_, i) => `
+          <li class="page-item ${i + 1 === page ? 'active' : ''}">
+            <a class="page-link" href="#">${i + 1}</a>
+          </li>
+        `).join('');
+
+        // Receipt viewer
+        document.querySelectorAll('.viewReceiptBtn').forEach(btn => {
+          btn.addEventListener('click', function () {
+            const transactionId = this.getAttribute('data-id');
+            const receiptContent = document.getElementById('receiptContent');
+            receiptContent.innerHTML = `
+              <h5>Receipt for Transaction #${transactionId}</h5>
+              <p><strong>Date:</strong> ${new Date().toLocaleDateString()}</p>
+              <p><strong>Service:</strong> Water Bill</p>
+              <p><strong>Amount:</strong> KES 500</p>
+              <p><strong>Method:</strong> Mobile Money</p>
+              <p><strong>Status:</strong> Completed</p>
+            `;
+            new bootstrap.Modal(document.getElementById('receiptModal')).show();
+          });
+        });
+      }
+
+      // Payment Handling
+      document.getElementById('paymentForm').addEventListener('submit', function (e) {
+        e.preventDefault();
+        const selectedService = document.querySelector('.service-card.selected');
+        
+        if (!selectedService) {
+          showToast('Please select a service first.', 'warning');
+          return;
+        }
+        
+        showLoading();
+        setTimeout(() => {
+          hideLoading();
+          showToast('Payment successful!', 'success');
+          loadDashboard();
+          loadTransactions();
+        }, 1500);
+      });
+
+      // Payment method instructions
+      document.getElementById('paymentMethod').addEventListener('change', function () {
+        const method = this.value;
+        document.getElementById('mobileMoneyFields').style.display = method === 'mobile_money' ? 'block' : 'none';
+        document.getElementById('mobileMoneyInstructions').style.display = method === 'mobile_money' ? 'block' : 'none';
+        document.getElementById('cardInstructions').style.display = method === 'card' ? 'block' : 'none';
+        document.getElementById('bankInstructions').style.display = method === 'bank_transfer' ? 'block' : 'none';
+      });
+
+      // Search
+      document.getElementById('searchBtn').addEventListener('click', function () {
+        const searchQuery = document.getElementById('searchTransactions').value;
+        loadTransactions(1, searchQuery);
+      });
+
+      // Logout
+      document.getElementById('logoutLink').addEventListener('click', function (e) {
+        e.preventDefault();
+        showLoading();
+        setTimeout(() => {
+          hideLoading();
+          authSection.style.display = 'block';
+          mainContent.style.display = 'none';
+          document.getElementById('logoutLink').style.display = 'none';
+          showToast('Logged out successfully.', 'success');
+        }, 1000);
+      });
+
+      // Print Receipt
+      document.getElementById('printReceiptBtn').addEventListener('click', () => {
+        window.print();
+      });
+    });
+  </script>
+</body>
+</html>
